@@ -5,7 +5,11 @@ include(CheckPIESupported)
 #     - for non-windows build platform & architecture is detected using inbuilt CMAKE variables and cross target component configure
 #     - for windows we use the passed in parameter to CMAKE to determine build arch
 #----------------------------------------
+
+if(NOT CLR_CMAKE_HOST_OS STREQUAL NuttX)
 set(CLR_CMAKE_HOST_OS ${CMAKE_SYSTEM_NAME})
+endif()
+
 if(CLR_CMAKE_HOST_OS STREQUAL Linux)
     set(CLR_CMAKE_HOST_UNIX 1)
     if(CLR_CROSS_COMPONENTS_BUILD)
@@ -121,6 +125,12 @@ endif(CLR_CMAKE_HOST_OS STREQUAL Windows)
 if(CLR_CMAKE_HOST_OS STREQUAL Emscripten)
     set(CLR_CMAKE_HOST_ARCH_WASM 1)
 endif(CLR_CMAKE_HOST_OS STREQUAL Emscripten)
+
+if(CLR_CMAKE_HOST_OS STREQUAL NuttX)
+    set(CLR_CMAKE_HOST_UNIX 1)
+    set(CLR_CMAKE_HOST_UNIX_ARM 1)
+    set(CLR_CMAKE_HOST_NUTTX 1)
+endif(CLR_CMAKE_HOST_OS STREQUAL NuttX)
 
 #--------------------------------------------
 # This repo builds two set of binaries
@@ -248,6 +258,15 @@ if(CLR_CMAKE_TARGET_OS STREQUAL SunOS)
     set(CLR_CMAKE_TARGET_UNIX 1)
     set(CLR_CMAKE_TARGET_SUNOS 1)
 endif(CLR_CMAKE_TARGET_OS STREQUAL SunOS)
+
+if(CLR_CMAKE_TARGET_OS STREQUAL NuttX)
+    set(CLR_CMAKE_TARGET_UNIX 1)
+    set(CLR_CMAKE_TARGET_NUTTX 1)
+
+    set(ARM_C_FLAGS "-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16")
+    set(NUTTX_C_FLAGS "-D__NuttX__ -I${NUTTX_PATH}/include -I${NUTTX_PATH}/include/nuttx/lib")
+    set(CMAKE_C_FLAGS   " ${ARM_C_FLAGS} ${NUTTX_C_FLAGS} -std=gnu99  -nostdinc -nostdlib -fno-builtin" CACHE INTERNAL "")
+endif(CLR_CMAKE_TARGET_OS STREQUAL NuttX)
 
 if(CLR_CMAKE_TARGET_UNIX)
     if(CLR_CMAKE_TARGET_ARCH STREQUAL x64)

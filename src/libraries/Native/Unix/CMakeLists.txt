@@ -119,6 +119,7 @@ else ()
 endif ()
 
 if(CLR_CMAKE_TARGET_ARCH_WASM)
+elseif (CLR_CMAKE_TARGET_NUTTX)
 elseif (CLR_CMAKE_TARGET_DARWIN)
     add_definitions(-D__APPLE_USE_RFC_3542)
 
@@ -159,6 +160,8 @@ if(CLR_CMAKE_TARGET_UNIX)
         endif()
     elseif (CLR_CMAKE_TARGET_ARCH_WASM)
         # No object stripping for WASM
+    elseif (CLR_CMAKE_TARGET_NUTTX)
+        # No object stripping for Nuttx
     else (CLR_CMAKE_TARGET_DARWIN)
         add_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wa,--noexecstack>)
         add_link_options(-Wl,--build-id=sha1 -Wl,-z,relro,-z,now)
@@ -247,11 +250,16 @@ function(install_library_and_symbols targetName)
 endfunction()
 
 include(configure.cmake)
+
+if (NOT CLR_CMAKE_TARGET_NUTTX)
 include(${CLR_ENG_NATIVE_DIR}/configuretools.cmake)
+endif()
 
+if (NOT CLR_CMAKE_TARGET_NUTTX)
 add_subdirectory(System.IO.Compression.Native)
+endif()
 
-if (NOT CLR_CMAKE_TARGET_ARCH_WASM)
+if (NOT CLR_CMAKE_TARGET_ARCH_WASM AND NOT CLR_CMAKE_TARGET_NUTTX)
     add_subdirectory(System.IO.Ports.Native)
 endif()
 
@@ -261,7 +269,7 @@ endif()
 
 add_subdirectory(System.Native)
 
-if (NOT CLR_CMAKE_TARGET_ARCH_WASM)
+if (NOT CLR_CMAKE_TARGET_ARCH_WASM AND NOT CLR_CMAKE_TARGET_NUTTX)
     add_subdirectory(System.Globalization.Native)
     add_subdirectory(System.Net.Security.Native)
     add_subdirectory(System.Security.Cryptography.Native)
