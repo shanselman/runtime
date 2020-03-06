@@ -32,9 +32,13 @@ static struct sigaction* OrigActionFor(int sig)
     {
         case SIGINT:  return &g_origSigIntHandler;
         case SIGQUIT: return &g_origSigQuitHandler;
+#if defined(HAVE_SIGCONT)
         case SIGCONT: return &g_origSigContHandler;
+#endif
         case SIGCHLD: return &g_origSigChldHandler;
+#if defined(HAVE_SIGWINCH)
         case SIGWINCH: return &g_origSigWinchHandler;
+#endif
     }
 
     assert(false);
@@ -56,6 +60,7 @@ static void SignalHandler(int sig, siginfo_t* siginfo, void* context)
 
     // Delegate to any saved handler we may have
     // We assume the original SIGCHLD handler will not reap our children.
+#if defined(HAVE_SIGCONT) && defined(SIGWINCH)
     if (sig == SIGCONT || sig == SIGCHLD || sig == SIGWINCH)
     {
         struct sigaction* origHandler = OrigActionFor(sig);
@@ -66,6 +71,7 @@ static void SignalHandler(int sig, siginfo_t* siginfo, void* context)
             origHandler->sa_sigaction(sig, siginfo, context);
         }
     }
+#endif
 }
 
 // Entrypoint for the thread that handles signals where our handling
@@ -98,6 +104,7 @@ static void* SignalHandlerLoop(void* arg)
             return NULL;
         }
 
+#if defined(HAVE_SIGCONT) && defined(SIGWINCH)
         if (signalCode == SIGCHLD || signalCode == SIGCONT || signalCode == SIGWINCH)
         {
             TerminalInvalidationCallback callback = g_terminalInvalidationCallback;
@@ -106,6 +113,7 @@ static void* SignalHandlerLoop(void* arg)
                 callback();
             }
         }
+#endif
 
         if (signalCode == SIGQUIT || signalCode == SIGINT)
         {
@@ -153,14 +161,18 @@ static void* SignalHandlerLoop(void* arg)
                 callback(reapAll ? 1 : 0);
             }
         }
+#if defined(HAVE_SIGCONT)
         else if (signalCode == SIGCONT)
         {
             ReinitializeTerminal();
         }
+#endif
+#if defined(SIGWINCH)
         else if (signalCode != SIGWINCH)
         {
             assert_msg(false, "invalid signalCode", (int)signalCode);
         }
+#endif
     }
 }
 
@@ -231,7 +243,10 @@ static void InstallSignalHandler(int sig, bool skipWhenSigIgn)
 
     struct sigaction newAction;
     memset(&newAction, 0, sizeof(struct sigaction));
-    newAction.sa_flags = SA_RESTART | SA_SIGINFO;
+    newAction.sa_flags = SA_SIGINFO;
+#if defined(HAVE_SA_RESTART)
+    newAction.sa_flags |= SA_RESTART;
+#endif
     sigemptyset(&newAction.sa_mask);
     newAction.sa_sigaction = &SignalHandler;
 
@@ -265,7 +280,7 @@ static bool CreateSignalHandlerThread(int* readFdPtr)
 
     int err = errno;
     pthread_attr_destroy(&attr);
-    errno = err;
+    set_errno(err);
 
     return success;
 }
@@ -288,7 +303,7 @@ int32_t InitializeSignalHandlingCore()
     if (readFdPtr == NULL)
     {
         CloseSignalHandlingPipe();
-        errno = ENOMEM;
+        set_errno(ENOMEM);
         return 0;
     }
     *readFdPtr = g_signalPipe[0];
@@ -300,7 +315,7 @@ int32_t InitializeSignalHandlingCore()
         int err = errno;
         free(readFdPtr);
         CloseSignalHandlingPipe();
-        errno = err;
+        set_errno(err);
         return 0;
     }
 
@@ -309,9 +324,13 @@ int32_t InitializeSignalHandlingCore()
     // processes would reset to the default on exec causing them to terminate on these signals.
     InstallSignalHandler(SIGINT , /* skipWhenSigIgn */ true);
     InstallSignalHandler(SIGQUIT, /* skipWhenSigIgn */ true);
+#if defined(HAVE_SIGCONT)
     InstallSignalHandler(SIGCONT, /* skipWhenSigIgn */ false);
+#endif
     InstallSignalHandler(SIGCHLD, /* skipWhenSigIgn */ false);
+#if defined(SIGWINCH)
     InstallSignalHandler(SIGWINCH, /* skipWhenSigIgn */ false);
+#endif
 
     return 1;
 }

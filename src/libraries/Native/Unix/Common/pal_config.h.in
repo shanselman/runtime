@@ -96,6 +96,24 @@
 #cmakedefine01 HAVE_TCP_H_TCP_KEEPALIVE
 #cmakedefine01 HAVE_BUILTIN_MUL_OVERFLOW
 #cmakedefine01 HAVE_DISCONNECTX
+#cmakedefine01 HAVE_ATEXIT
+#cmakedefine01 HAVE_FNMATCH_H
+#cmakedefine01 HAVE_SYS_FILE_H
+#cmakedefine01 HAVE_LSTAT
+#cmakedefine01 HAVE_CHMOD
+#cmakedefine01 HAVE_FCHMOD
+#cmakedefine01 HAVE_FLOCK
+#cmakedefine01 HAVE_FLINK
+#cmakedefine01 HAVE_GETLINE
+#cmakedefine01 HAVE_READLINK
+#cmakedefine01 HAVE_SYNC
+#cmakedefine01 HAVE_REALPATH
+#cmakedefine01 HAVE_SIGCONT
+#cmakedefine01 HAVE_SIGWINCH
+#cmakedefine01 HAVE_SA_RESTART
+#cmakedefine01 HAVE_UTIME_H
+#cmakedefine01 HAVE_UTIMES
+#cmakedefine01 HAVE_MSYNC
 
 // Mac OS X has stat64, but it is deprecated since plain stat now
 // provides the same 64-bit aware struct when targeting OS X > 10.5
@@ -103,4 +121,30 @@
 #ifdef __APPLE__
 #undef HAVE_STAT64
 #define HAVE_STAT64 0
+#endif
+
+#ifdef __NuttX__
+#undef HAVE_TIOCGWINSZ
+#undef HAVE_ATEXIT
+#undef HAVE_FNMATCH_H
+#undef HAVE_SYS_FILE_H
+#undef HAVE_LSTAT
+#undef HAVE_CHMOD
+#undef HAVE_FCHMOD
+#undef HAVE_FLOCK
+#undef HAVE_FLINK
+#undef HAVE_GETLINE
+#undef HAVE_READLINK
+#undef HAVE_SYNC
+#undef HAVE_REALPATH
+#undef HAVE_SIGCONT
+#undef HAVE_SIGWINCH
+#undef HAVE_SA_RESTART
+#undef HAVE_UTIME_H
+#undef HAVE_UTIMES
+#undef HAVE_MSYNC
+#undef AF_PACKET
+#define alloca __builtin_alloca
+#define srand48 srand
+#define lrand48 rand
 #endif

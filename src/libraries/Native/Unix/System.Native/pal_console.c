@@ -34,7 +34,7 @@ int32_t SystemNative_GetWindowSize(WinSize* windowSize)
 
     return error;
 #else
-    errno = ENOTSUP;
+    set_errno(ENOTSUP);
     return -1;
 #endif
 }
@@ -93,6 +93,8 @@ static bool g_childUsesTerminal = false;      // tracks whether a child process 
 static bool g_terminalUninitialized = false;  // tracks whether the application is terminating
 
 static bool g_hasTty = false;                  // cache we are not a tty
+
+#if !defined(__NuttX__)
 
 static volatile bool g_receivedSigTtou = false;
 
@@ -220,6 +222,14 @@ void UninitializeTerminal()
         pthread_mutex_unlock(&g_lock);
     }
 }
+
+#else
+
+static bool TcSetAttr(struct termios* termios, bool blockIfBackground) {}
+static bool ConfigureTerminal(bool signalForBreak, bool forChild, uint8_t minChars, uint8_t decisecondsTimeout, bool blockIfBackground) {}
+void UninitializeTerminal() {}
+
+#endif
 
 void SystemNative_InitializeConsoleBeforeRead(uint8_t minChars, uint8_t decisecondsTimeout)
 {
@@ -385,7 +395,7 @@ int32_t SystemNative_ReadStdin(void* buffer, int32_t bufferSize)
 
      if (bufferSize < 0)
     {
-        errno = EINVAL;
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -451,7 +461,9 @@ static void InitializeTerminalCore()
         g_currentTermios = g_initTermios;
         g_signalForBreak = g_initTermios.c_lflag & (uint32_t)ISIG;
 
+#if defined(HAVE_ATEXIT)
         atexit(UninitializeTerminal);
+#endif
     }
     else
     {

@@ -410,7 +410,12 @@ static int32_t SystemNative_ConvertErrorPalToGai(int32_t error)
     return error;
 }
 
-
+#if defined(__NuttX__)
+static const char *gai_strerror(int ecode)
+{
+    return 0;
+}
+#endif
 
 const char* SystemNative_StrErrorR(int32_t platformErrno, char* buffer, int32_t bufferSize)
 {

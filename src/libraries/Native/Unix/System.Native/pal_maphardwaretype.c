@@ -12,6 +12,8 @@
 #if defined(_WASM_)
 #include <netpacket/packet.h>
 #include <net/if_arp.h>
+#elif defined(__NuttX__)
+#include <netpacket/packet.h>
 #else // _WASM_
 #include <linux/if_packet.h>
 #include <linux/if_arp.h>
@@ -25,7 +27,7 @@
 
 uint16_t MapHardwareType(uint16_t nativeType)
 {
-#if defined(AF_PACKET)
+#if defined(AF_PACKET) && !defined(__NuttX__)
     switch (nativeType)
     {
         case ARPHRD_ETHER:

@@ -37,6 +37,14 @@ elseif (CLR_CMAKE_TARGET_FREEBSD)
     endif ()
 endif ()
 
+if (CLR_CMAKE_TARGET_NUTTX)
+    list(REMOVE_ITEM NATIVE_SOURCES pal_interfaceaddresses.c)
+    list(REMOVE_ITEM NATIVE_SOURCES pal_mount.c)
+    list(REMOVE_ITEM NATIVE_SOURCES pal_networking.c)
+    list(REMOVE_ITEM NATIVE_SOURCES pal_process.c)
+    list(REMOVE_ITEM NATIVE_SOURCES pal_uid.c)
+endif ()
+
 if (GEN_SHARED_LIB)
     add_library(System.Native
         SHARED
